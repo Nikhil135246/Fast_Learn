@@ -401,6 +401,77 @@ export const HomePage = () => {
           color: var(--text-main);
           background-color: #f8fafc;
         }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+          .home-container {
+            padding: 1.5rem 1rem;
+          }
+
+          .home-content {
+            gap: 1.5rem;
+          }
+
+          .start-btn {
+            width: 150px;
+            height: 150px;
+          }
+
+          .start-label {
+            font-size: 1.2rem;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .home-container {
+            padding: 1rem 0.75rem;
+          }
+
+          .home-content {
+            gap: 1.25rem;
+            max-width: 100%;
+          }
+
+          .start-btn {
+            width: 130px;
+            height: 130px;
+          }
+
+          .play-icon {
+            width: 36px;
+            height: 36px;
+          }
+
+          .start-label {
+            font-size: 1.1rem;
+          }
+
+          .mode-badge {
+            font-size: 0.7rem;
+            padding: 0.2rem 0.5rem;
+          }
+
+          .topic-selector-container {
+            padding: 0.85rem 1rem;
+          }
+
+          .selector-title {
+            font-size: 0.8rem;
+          }
+
+          .edit-settings-btn {
+            font-size: 0.8rem;
+            padding: 0.3rem 0.6rem;
+          }
+
+          .active-topic-trigger {
+            padding: 0.7rem 0.85rem;
+          }
+
+          .active-topic-name {
+            font-size: 0.9rem;
+          }
+        }
       `}</style>
     </div>
   );

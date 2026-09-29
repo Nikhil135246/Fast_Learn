@@ -647,6 +647,127 @@ export const UploadPage = () => {
         .action-cell {
           text-align: center;
         }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+          .upload-page-container {
+            padding-top: 1.5rem;
+            padding-bottom: 2rem;
+          }
+
+          .page-title {
+            font-size: 1.5rem;
+          }
+
+          .topics-grid {
+            grid-template-columns: 1fr;
+          }
+
+          .dropzone-area {
+            padding: 2rem 1rem;
+          }
+
+          .tab-btn {
+            padding: 0.6rem 0.9rem;
+            font-size: 0.85rem;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .upload-page-container {
+            padding-top: 1rem;
+            padding-bottom: 1.5rem;
+          }
+
+          .page-title {
+            font-size: 1.3rem;
+          }
+
+          .page-subtitle {
+            font-size: 0.85rem;
+          }
+
+          .tab-bar {
+            gap: 0;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+          }
+
+          .tab-btn {
+            padding: 0.55rem 0.75rem;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            flex-shrink: 0;
+          }
+
+          .tab-btn span {
+            display: inline;
+          }
+
+          .topics-grid {
+            gap: 0.75rem;
+          }
+
+          .topic-manager-card {
+            padding: 1rem;
+          }
+
+          .topic-manager-title {
+            font-size: 1rem;
+          }
+
+          .topic-manager-actions {
+            flex-wrap: wrap;
+          }
+
+          .upload-box-card {
+            padding: 1rem;
+          }
+
+          .dropzone-area {
+            padding: 1.5rem 1rem;
+          }
+
+          .dropzone-content h3 {
+            font-size: 0.95rem;
+          }
+
+          .dropzone-content p {
+            font-size: 0.8rem;
+          }
+
+          .table-editor-wrapper {
+            padding: 1rem;
+          }
+
+          .topic-name-row {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 0.5rem;
+          }
+
+          .topic-name-input {
+            max-width: 100%;
+          }
+
+          .table-toolbar {
+            flex-wrap: wrap;
+            gap: 0.5rem;
+          }
+
+          .cell-input {
+            padding: 0.35rem 0.4rem;
+            font-size: 0.85rem;
+          }
+
+          .editor-table th, .editor-table td {
+            padding: 0.35rem;
+          }
+
+          .mastery-section {
+            padding: 0.5rem 0.6rem;
+          }
+        }
       `}</style>
     </div>
   );

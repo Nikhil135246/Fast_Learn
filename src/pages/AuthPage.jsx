@@ -236,6 +236,32 @@ export const AuthPage = () => {
         .auth-switch-btn:hover {
           color: var(--primary-hover);
         }
+
+        /* Mobile Responsive */
+        @media (max-width: 480px) {
+          .auth-page-container {
+            padding: 1.5rem 0.75rem;
+          }
+
+          .auth-card {
+            max-width: 100%;
+            padding: 1.75rem 1.25rem;
+            border-radius: var(--radius-md);
+          }
+
+          .auth-title {
+            font-size: 1.35rem;
+          }
+
+          .auth-subtitle {
+            font-size: 0.8rem;
+          }
+
+          .brand-badge {
+            width: 42px;
+            height: 42px;
+          }
+        }
       `}</style>
     </div>
   );

@@ -212,6 +212,70 @@ export const Navbar = ({ onOpenTimeModal }) => {
         .logout-item:hover {
           background-color: var(--danger-bg);
         }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+          .nav-content {
+            height: 56px;
+          }
+
+          .nav-actions {
+            gap: 0.5rem;
+          }
+
+          .time-btn, .upload-btn {
+            padding: 0.4rem 0.65rem;
+            font-size: 0.8rem;
+          }
+
+          .app-title {
+            font-size: 1.1rem;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .nav-content {
+            height: 52px;
+            padding: 0 0.75rem;
+          }
+
+          .nav-actions {
+            gap: 0.35rem;
+          }
+
+          .upload-btn span,
+          .time-btn span {
+            display: none;
+          }
+
+          .upload-btn,
+          .time-btn {
+            padding: 0.4rem 0.55rem;
+            min-height: 36px;
+          }
+
+          .app-title {
+            font-size: 1rem;
+          }
+
+          .logo-icon {
+            width: 28px;
+            height: 28px;
+          }
+
+          .username-label {
+            display: none;
+          }
+
+          .profile-avatar-btn {
+            padding: 0.35rem 0.5rem;
+            min-height: 36px;
+          }
+
+          .profile-menu {
+            right: -0.5rem;
+          }
+        }
       `}</style>
     </header>
   );

@@ -201,3 +201,40 @@ input:focus {
   max-width: 420px;
   border: 1px solid var(--border-color);
 }
+
+/* ===== MOBILE RESPONSIVE OVERRIDES ===== */
+@media (max-width: 768px) {
+  .container {
+    padding: 0 1rem;
+  }
+
+  .modal-content {
+    max-width: 95%;
+    padding: 1.25rem;
+    margin: 0.5rem;
+  }
+
+  button, .btn {
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 0 0.75rem;
+  }
+
+  .modal-overlay {
+    padding: 0.5rem;
+  }
+
+  .modal-content {
+    max-width: 100%;
+    border-radius: var(--radius-md);
+    padding: 1rem;
+  }
+
+  input, select {
+    font-size: 16px; /* Prevents iOS zoom on focus */
+  }
+}

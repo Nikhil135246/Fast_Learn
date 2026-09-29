@@ -252,6 +252,31 @@ export const PracticeSettingsDropdown = ({ isOpen, onClose }) => {
           border-color: var(--primary);
         }
 
+        /* Mobile Responsive */
+        @media (max-width: 480px) {
+          .settings-dropdown-wrapper {
+            position: fixed;
+            right: 0.5rem;
+            left: 0.5rem;
+            top: auto;
+            bottom: 0.5rem;
+            width: auto;
+            max-height: 70vh;
+            overflow-y: auto;
+            border-radius: var(--radius-lg);
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+            z-index: 200;
+          }
+
+          .option-name {
+            font-size: 0.85rem;
+          }
+
+          .option-sub {
+            font-size: 0.7rem;
+          }
+        }
+
         /* Small Switch */
         .switch-sm {
           position: relative;

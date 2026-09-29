@@ -207,6 +207,66 @@ export const ResultsPage = () => {
           width: 100%;
           padding: 0.7rem;
         }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+          .results-card {
+            padding: 2rem 1.5rem;
+          }
+
+          .results-title {
+            font-size: 1.5rem;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .results-container {
+            padding: 1rem 0.5rem;
+          }
+
+          .results-card {
+            max-width: 100%;
+            padding: 1.5rem 1rem;
+            border-radius: var(--radius-md);
+          }
+
+          .trophy-wrapper {
+            width: 52px;
+            height: 52px;
+            margin-bottom: 1rem;
+          }
+
+          .results-title {
+            font-size: 1.35rem;
+          }
+
+          .results-subtitle {
+            font-size: 0.85rem;
+            margin-bottom: 1.25rem;
+          }
+
+          .metrics-grid {
+            gap: 0.65rem;
+            margin-bottom: 1.5rem;
+          }
+
+          .metric-box {
+            padding: 0.7rem;
+          }
+
+          .metric-value {
+            font-size: 1.2rem;
+          }
+
+          .metric-label {
+            font-size: 0.7rem;
+          }
+
+          .action-btn {
+            padding: 0.65rem;
+            font-size: 0.9rem;
+          }
+        }
       `}</style>
     </div>
   );

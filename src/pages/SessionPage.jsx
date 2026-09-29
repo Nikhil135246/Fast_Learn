@@ -645,6 +645,108 @@ export const SessionPage = () => {
           background-color: var(--danger-bg);
           color: var(--danger);
         }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+          .session-container {
+            padding: 1.5rem 1rem;
+          }
+
+          .session-card {
+            padding: 1.5rem;
+          }
+
+          .question-key {
+            font-size: 2.25rem;
+          }
+
+          .session-input {
+            font-size: 1.5rem;
+            padding: 0.65rem 0.85rem;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .session-container {
+            padding: 1rem 0.5rem;
+            align-items: flex-start;
+            padding-top: 1.5rem;
+          }
+
+          .session-card {
+            max-width: 100%;
+            padding: 1.25rem 1rem;
+            border-radius: var(--radius-md);
+          }
+
+          .session-header {
+            margin-bottom: 1rem;
+          }
+
+          .timer-badge {
+            padding: 0.3rem 0.6rem;
+            font-size: 0.8rem;
+          }
+
+          .mini-badge {
+            font-size: 0.7rem;
+            padding: 0.2rem 0.45rem;
+          }
+
+          .xp-score-badge {
+            padding: 0.3rem 0.6rem;
+            font-size: 0.8rem;
+          }
+
+          .streak-banner {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.7rem;
+          }
+
+          .question-box {
+            margin-bottom: 1.25rem;
+          }
+
+          .question-label {
+            font-size: 0.7rem;
+          }
+
+          .question-key {
+            font-size: 1.85rem;
+          }
+
+          .session-input {
+            font-size: 1.3rem;
+            padding: 0.6rem 0.75rem;
+            border-radius: var(--radius-sm);
+          }
+
+          .revealed-answer-banner {
+            font-size: 0.8rem;
+            padding: 0.45rem 0.7rem;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+          }
+
+          .session-subtool-row {
+            flex-wrap: wrap;
+            gap: 0.3rem;
+          }
+
+          .session-stats-footer {
+            margin-top: 1.25rem;
+          }
+
+          .stat-pill {
+            font-size: 0.8rem;
+            padding: 0.25rem 0.6rem;
+          }
+
+          .floating-xp-popup {
+            font-size: 0.8rem;
+            padding: 0.3rem 0.8rem;
+          }
+        }
       `}</style>
     </div>
   );
