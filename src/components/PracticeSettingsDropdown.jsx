@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Repeat, Zap, Flame, Eye, X } from 'lucide-react';
+import { Repeat, Zap, Eye, X } from 'lucide-react';
 
 export const PracticeSettingsDropdown = ({ isOpen, onClose }) => {
   const { settings, updateSettings } = useAuth();
@@ -19,9 +19,6 @@ export const PracticeSettingsDropdown = ({ isOpen, onClose }) => {
     updateSettings({ rapidFireSeconds: parseInt(secs, 10) || 3 });
   };
 
-  const handleToggleAdhdMode = () => {
-    updateSettings({ adhdMode: !settings.adhdMode });
-  };
 
   const handleToggleRevealAnswer = () => {
     updateSettings({ revealAnswerMode: !settings.revealAnswerMode });
@@ -92,25 +89,6 @@ export const PracticeSettingsDropdown = ({ isOpen, onClose }) => {
               </div>
             </div>
           )}
-        </div>
-
-        {/* ADHD Dopamine Mode Option */}
-        <div className="dropdown-option-row">
-          <div className="option-label-group">
-            <Flame size={15} className="option-icon adhd-icon" />
-            <div>
-              <p className="option-name">ADHD Dopamine Mode</p>
-              <p className="option-sub">Streaks, XP & Sound Chimes</p>
-            </div>
-          </div>
-          <label className="switch-sm">
-            <input
-              type="checkbox"
-              checked={settings.adhdMode}
-              onChange={handleToggleAdhdMode}
-            />
-            <span className="slider-sm round"></span>
-          </label>
         </div>
 
         {/* Reveal Answer Mode Option */}
@@ -202,7 +180,6 @@ export const PracticeSettingsDropdown = ({ isOpen, onClose }) => {
 
         .option-icon { color: var(--primary); }
         .rapid-icon { color: #d97706; }
-        .adhd-icon { color: #ea580c; }
         .reveal-icon { color: #8b5cf6; }
 
         .option-name {

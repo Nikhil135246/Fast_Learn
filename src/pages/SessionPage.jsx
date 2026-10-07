@@ -102,9 +102,7 @@ export const SessionPage = () => {
   }, [rapidFireTimeLeft, settings?.rapidFireMode]);
 
   const handleRapidFireTimeout = () => {
-    if (settings?.adhdMode) {
-      soundFx.playWrongSound();
-    }
+    soundFx.playWrongSound();
 
     setIncorrectCount(prev => prev + 1);
     setStreakCount(0);
@@ -176,17 +174,15 @@ export const SessionPage = () => {
       const earnedXp = 100 * multiplier;
       setTotalXp(prev => prev + earnedXp);
 
-      if (settings?.adhdMode) {
-        if (newStreak >= 3) {
-          soundFx.playStreakSound();
-        } else {
-          soundFx.playCorrectSound();
-        }
-
-        const xpText = multiplier > 1 ? `+${earnedXp} XP (${multiplier}x Streak!)` : `+${earnedXp} XP`;
-        setFloatingXp({ id: Date.now(), text: xpText });
-        setTimeout(() => setFloatingXp(null), 900);
+      if (newStreak >= 3) {
+        soundFx.playStreakSound();
+      } else {
+        soundFx.playCorrectSound();
       }
+
+      const xpText = multiplier > 1 ? `+${earnedXp} XP (${multiplier}x Streak!)` : `+${earnedXp} XP`;
+      setFloatingXp({ id: Date.now(), text: xpText });
+      setTimeout(() => setFloatingXp(null), 900);
 
       advanceToNextQuestion();
     } else {
@@ -204,9 +200,7 @@ export const SessionPage = () => {
         setIsAnswerRevealed(true);
       }
 
-      if (settings?.adhdMode) {
-        soundFx.playWrongSound();
-      }
+      soundFx.playWrongSound();
 
       setTimeout(() => setIsShaking(false), 350);
     }
@@ -239,9 +233,9 @@ export const SessionPage = () => {
 
   return (
     <div className="session-container flex-center">
-      <div className={`session-card animate-fade-in ${settings?.adhdMode ? 'adhd-session-card' : ''}`}>
+      <div className="session-card animate-fade-in">
         
-        {/* Floating Dopamine XP Popup */}
+        {/* Floating XP Popup */}
         {floatingXp && (
           <div key={floatingXp.id} className="floating-xp-popup animate-float-up">
             <Award size={18} />
@@ -264,12 +258,10 @@ export const SessionPage = () => {
             )}
           </div>
 
-          {settings?.adhdMode && (
-            <div className="xp-score-badge">
-              <Zap size={15} color="#eab308" fill="#eab308" />
-              <span>{totalXp} XP</span>
-            </div>
-          )}
+          <div className="xp-score-badge">
+            <Zap size={15} color="#eab308" fill="#eab308" />
+            <span>{totalXp} XP</span>
+          </div>
 
           <button className="btn btn-subtle exit-btn" onClick={() => navigateTo('home')}>
             <X size={20} />
@@ -288,8 +280,8 @@ export const SessionPage = () => {
           </div>
         )}
 
-        {/* ADHD Streak Badge */}
-        {settings?.adhdMode && streakCount >= 2 && (
+        {/* Streak Combo Badge */}
+        {streakCount >= 2 && (
           <div className="streak-banner animate-fade-in">
             <Flame size={18} color="#ea580c" fill="#ea580c" />
             <span>{streakCount} STREAK COMBO! ({streakCount >= 10 ? '4x' : streakCount >= 5 ? '3x' : '2x'})</span>

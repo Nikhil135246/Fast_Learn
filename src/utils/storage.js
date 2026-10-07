@@ -65,7 +65,7 @@ export const DEFAULT_SETTINGS = {
   flipMode: false,          // false: Key -> Value, true: Value -> Key
   rapidFireMode: false,     // false: disabled, true: timed question limit
   rapidFireSeconds: 3,      // seconds per question
-  adhdMode: true,           // dopamine XP points, streaks & sound chimes
+  adhdMode: true,           // always-on: XP points, streaks & sound chimes
   revealAnswerMode: false,  // reveal answer after 3 wrong attempts or via Reveal button
   sessionDuration: 300      // total session length in seconds (5 mins = 300s)
 };

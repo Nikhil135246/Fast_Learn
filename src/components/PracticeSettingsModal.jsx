@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Settings, Repeat, Zap, Flame, X } from 'lucide-react';
+import { Settings, Repeat, Zap, X } from 'lucide-react';
 
 export const PracticeSettingsModal = ({ isOpen, onClose }) => {
   const { settings, updateSettings } = useAuth();
@@ -17,10 +17,6 @@ export const PracticeSettingsModal = ({ isOpen, onClose }) => {
 
   const handleRapidFireSecsChange = (secs) => {
     updateSettings({ rapidFireSeconds: parseInt(secs, 10) || 3 });
-  };
-
-  const handleToggleAdhdMode = () => {
-    updateSettings({ adhdMode: !settings.adhdMode });
   };
 
   return (
@@ -98,28 +94,6 @@ export const PracticeSettingsModal = ({ isOpen, onClose }) => {
                 </div>
               </div>
             )}
-          </div>
-
-          {/* ADHD Mode Option */}
-          <div className="setting-card adhd-card">
-            <div className="setting-info">
-              <div className="setting-icon-badge adhd-badge">
-                <Flame size={18} />
-              </div>
-              <div>
-                <h4 className="setting-name">ADHD Dopamine Mode</h4>
-                <p className="setting-desc">Streaks, XP points, floating popups & audio chimes</p>
-              </div>
-            </div>
-            <label className="switch">
-              <input
-                type="checkbox"
-                checked={settings.adhdMode}
-                onChange={handleToggleAdhdMode}
-              />
-              <span className="slider round"></span>
-            </label>
-          </div>
         </div>
 
         <button className="btn btn-primary done-btn" onClick={onClose}>
@@ -166,11 +140,6 @@ export const PracticeSettingsModal = ({ isOpen, onClose }) => {
             background-color: #ffffff;
           }
 
-          .adhd-card {
-            background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
-            border-color: #fdba74;
-          }
-
           .setting-info {
             display: flex;
             align-items: center;
@@ -192,11 +161,6 @@ export const PracticeSettingsModal = ({ isOpen, onClose }) => {
           .rapid-badge {
             background-color: #fef3c7;
             color: #d97706;
-          }
-
-          .adhd-badge {
-            background-color: #ffedd5;
-            color: #ea580c;
           }
 
           .setting-name {

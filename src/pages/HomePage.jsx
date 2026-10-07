@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { PracticeSettingsDropdown } from '../components/PracticeSettingsDropdown';
-import { Play, Settings, Layers, ChevronDown, ChevronUp, Check, PlusCircle, Repeat, Zap, Flame, Eye } from 'lucide-react';
+import { Play, Settings, Layers, ChevronDown, ChevronUp, Check, PlusCircle, Repeat, Zap, Eye } from 'lucide-react';
 
 export const HomePage = () => {
   const { topics, activeTopicId, selectTopic, activeTopic, settings, navigateTo } = useAuth();
@@ -34,11 +34,6 @@ export const HomePage = () => {
           {settings.rapidFireMode && (
             <span className="mode-badge rapid-badge">
               <Zap size={12} /> Rapid Fire ({settings.rapidFireSeconds}s)
-            </span>
-          )}
-          {settings.adhdMode && (
-            <span className="mode-badge adhd-badge">
-              <Flame size={12} /> ADHD Mode
             </span>
           )}
           {settings.revealAnswerMode && (
@@ -176,11 +171,6 @@ export const HomePage = () => {
         .rapid-badge {
           background-color: #fef3c7;
           color: #d97706;
-        }
-
-        .adhd-badge {
-          background-color: #ffedd5;
-          color: #ea580c;
         }
 
         .reveal-badge {
