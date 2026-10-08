@@ -29,6 +29,7 @@ export const DEFAULT_TOPICS = [
   {
     id: 'ports_numbers',
     name: 'Port & Number',
+    type: 'kv',
     isBuiltIn: true,
     mastery: 0,
     data: [
@@ -47,6 +48,7 @@ export const DEFAULT_TOPICS = [
   {
     id: 'squares_50',
     name: 'Squares up to 50',
+    type: 'kv',
     isBuiltIn: true,
     mastery: 0,
     data: generateSquares()
@@ -54,9 +56,49 @@ export const DEFAULT_TOPICS = [
   {
     id: 'cubes_30',
     name: 'Cubes up to 30',
+    type: 'kv',
     isBuiltIn: true,
     mastery: 0,
     data: generateCubes()
+  },
+  {
+    id: 'demo_mcq',
+    name: 'Computer Science MCQ',
+    type: 'mcq',
+    isBuiltIn: true,
+    mastery: 0,
+    data: [
+      {
+        question: 'Which protocol uses port 443?',
+        options: ['HTTPS', 'HTTP', 'FTP', 'SSH'],
+        correctIndex: 0,
+        explanation: 'HTTPS (HyperText Transfer Protocol Secure) uses port 443 by default for encrypted web traffic.'
+      },
+      {
+        question: 'What does CPU stand for?',
+        options: ['Central Processing Unit', 'Central Program Utility', 'Computer Personal Unit', 'Central Processor Unifier'],
+        correctIndex: 0,
+        explanation: 'CPU stands for Central Processing Unit. It is the primary component that executes instructions in a computer.'
+      },
+      {
+        question: 'Which data structure uses FIFO ordering?',
+        options: ['Queue', 'Stack', 'Tree', 'Graph'],
+        correctIndex: 0,
+        explanation: 'A Queue uses First-In-First-Out (FIFO) ordering, meaning the first element added is the first one removed.'
+      },
+      {
+        question: 'What is the time complexity of binary search?',
+        options: ['O(log n)', 'O(n)', 'O(n²)', 'O(1)'],
+        correctIndex: 0,
+        explanation: 'Binary search has O(log n) time complexity because it halves the search space with each comparison.'
+      },
+      {
+        question: 'Which layer of the OSI model handles routing?',
+        options: ['Network Layer', 'Transport Layer', 'Data Link Layer', 'Application Layer'],
+        correctIndex: 0,
+        explanation: 'The Network Layer (Layer 3) handles routing and forwarding of data packets between networks. Routers operate at this layer.'
+      }
+    ]
   }
 ];
 

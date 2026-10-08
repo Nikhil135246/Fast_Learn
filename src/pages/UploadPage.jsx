@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { parseFileToKeyValuePairs } from '../utils/fileParser';
-import { Upload, Plus, Trash2, Save, ArrowLeft, FileText, Table as TableIcon, CheckCircle, Edit2, Layers, Award } from 'lucide-react';
+import { parseFileToKeyValuePairs, parseFileToMCQ } from '../utils/fileParser';
+import { Upload, Plus, Trash2, Save, ArrowLeft, FileText, Table as TableIcon, CheckCircle, Edit2, Layers, Award, ListChecks } from 'lucide-react';
 
 export const UploadPage = () => {
   const { topics, activeTopicId, selectTopic, addTopic, updateTopic, deleteTopic, navigateTo } = useAuth();
-  const [activeTab, setActiveTab] = useState('list'); // 'list', 'upload', 'edit'
+  const [activeTab, setActiveTab] = useState('list'); // 'list', 'upload', 'edit', 'mcq-upload'
 
   // Topic editing state
   const [editingTopicId, setEditingTopicId] = useState(null);
@@ -13,6 +13,14 @@ export const UploadPage = () => {
   const [columns, setColumns] = useState(['Key', 'Value']);
   const [rows, setRows] = useState([['', '']]);
   const [errorMsg, setErrorMsg] = useState('');
+
+  // MCQ editing state
+  const [editingMcqTopicId, setEditingMcqTopicId] = useState(null);
+  const [mcqTopicName, setMcqTopicName] = useState('New MCQ Topic');
+  const [mcqRows, setMcqRows] = useState([
+    { question: '', options: ['', '', '', ''], correctIndex: 0, explanation: '' }
+  ]);
+
 
   // Handle uploading multiple files (each creates a topic!)
   const handleMultipleFilesUpload = async (e) => {
@@ -52,6 +60,115 @@ export const UploadPage = () => {
     }
   };
 
+  const handleMCQFileUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    if (!files || files.length === 0) return;
+
+    setErrorMsg('');
+    let addedCount = 0;
+
+    for (let file of files) {
+      try {
+        const parsedData = await parseFileToMCQ(file);
+        if (parsedData.length > 0) {
+          const cleanName = file.name.replace(/\.[^/.]+$/, "").replace(/_/g, " ");
+          const formattedName = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
+          
+          const newTopic = {
+            id: 'topic_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+            name: formattedName,
+            isBuiltIn: false,
+            mastery: 0,
+            type: 'mcq',
+            data: parsedData
+          };
+
+          addTopic(newTopic);
+          addedCount++;
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    if (addedCount > 0) {
+      setActiveTab('list');
+    } else {
+      setErrorMsg('Failed to parse uploaded files. Ensure they are valid MCQ CSV or Excel files.');
+    }
+  };
+
+  // MCQ Manual Row Operations
+  const handleAddMcqRow = () => {
+    setMcqRows([...mcqRows, { question: '', options: ['', '', '', ''], correctIndex: 0, explanation: '' }]);
+  };
+
+  const handleDeleteMcqRow = (idx) => {
+    if (mcqRows.length <= 1) return;
+    setMcqRows(mcqRows.filter((_, i) => i !== idx));
+  };
+
+  const handleMcqFieldChange = (rowIdx, field, value) => {
+    const updated = [...mcqRows];
+    updated[rowIdx][field] = value;
+    setMcqRows(updated);
+  };
+
+  const handleMcqOptionChange = (rowIdx, optIdx, value) => {
+    const updated = [...mcqRows];
+    updated[rowIdx].options[optIdx] = value;
+    setMcqRows(updated);
+  };
+
+  // Save MCQ Topic
+  const handleSaveMcqTopic = () => {
+    setErrorMsg('');
+
+    if (!mcqTopicName.trim()) {
+      setErrorMsg('Please enter a topic title.');
+      return;
+    }
+
+    const validData = [];
+    for (let r of mcqRows) {
+      if (r.question.trim() && r.options.every(o => String(o).trim())) {
+        validData.push({
+          question: r.question.trim(),
+          options: r.options.map(o => String(o).trim()),
+          correctIndex: r.correctIndex !== undefined ? Number(r.correctIndex) : 0,
+          explanation: r.explanation ? r.explanation.trim() : ''
+        });
+      }
+    }
+
+    if (validData.length === 0) {
+      setErrorMsg('Please add at least one valid MCQ with a question and all 4 options.');
+      return;
+    }
+
+    if (editingMcqTopicId) {
+      const existing = topics.find(t => t.id === editingMcqTopicId);
+      updateTopic(editingMcqTopicId, {
+        ...existing,
+        name: mcqTopicName.trim(),
+        data: validData,
+        type: 'mcq'
+      });
+    } else {
+      const newTopic = {
+        id: 'topic_' + Date.now(),
+        name: mcqTopicName.trim(),
+        isBuiltIn: false,
+        mastery: 0,
+        type: 'mcq',
+        data: validData
+      };
+      addTopic(newTopic);
+    }
+
+    setActiveTab('list');
+  };
+
   // Start Manual Creation
   const handleStartCreateTopic = () => {
     setEditingTopicId(null);
@@ -67,16 +184,33 @@ export const UploadPage = () => {
 
   // Start Editing Existing Topic
   const handleStartEditTopic = (topic) => {
-    setEditingTopicId(topic.id);
-    setTopicName(topic.name);
-    setColumns(['Key', 'Value']);
-    if (topic.data && topic.data.length > 0) {
-      setRows(topic.data.map(item => [item.key, item.value]));
+    if (topic.type === 'mcq') {
+      setEditingMcqTopicId(topic.id);
+      setMcqTopicName(topic.name);
+      if (topic.data && topic.data.length > 0) {
+        setMcqRows(topic.data.map(item => ({
+          question: item.question,
+          options: [...item.options],
+          correctIndex: item.correctIndex !== undefined ? item.correctIndex : 0,
+          explanation: item.explanation || ''
+        })));
+      } else {
+        setMcqRows([{ question: '', options: ['', '', '', ''], correctIndex: 0, explanation: '' }]);
+      }
+      setErrorMsg('');
+      setActiveTab('mcq-upload');
     } else {
-      setRows([['', '']]);
+      setEditingTopicId(topic.id);
+      setTopicName(topic.name);
+      setColumns(['Key', 'Value']);
+      if (topic.data && topic.data.length > 0) {
+        setRows(topic.data.map(item => [item.key, item.value]));
+      } else {
+        setRows([['', '']]);
+      }
+      setErrorMsg('');
+      setActiveTab('edit');
     }
-    setErrorMsg('');
-    setActiveTab('edit');
   };
 
   // Table Row/Column Operations
@@ -175,6 +309,18 @@ export const UploadPage = () => {
           <Plus size={16} />
           <span>New Topic</span>
         </button>
+        <button
+          className={`tab-btn ${activeTab === 'mcq-upload' ? 'active' : ''}`}
+          onClick={() => {
+            setEditingMcqTopicId(null);
+            setMcqTopicName('New MCQ Topic');
+            setMcqRows([{ question: '', options: ['', '', '', ''], explanation: '' }]);
+            setActiveTab('mcq-upload');
+          }}
+        >
+          <ListChecks size={16} />
+          <span>+ MCQ</span>
+        </button>
       </div>
 
       {errorMsg && (
@@ -195,7 +341,12 @@ export const UploadPage = () => {
                 <div className="topic-manager-header">
                   <div>
                     <h3 className="topic-manager-title">{t.name}</h3>
-                    <span className="topic-manager-count">{t.data ? t.data.length : 0} items</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <span className="topic-manager-count">{t.data ? t.data.length : 0} items</span>
+                      {t.type === 'mcq' && (
+                        <span className="type-badge mcq-type">MCQ</span>
+                      )}
+                    </div>
                   </div>
                   {isSelected ? (
                     <span className="selected-badge">
@@ -343,6 +494,113 @@ export const UploadPage = () => {
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 4: MCQ UPLOAD AND MANUAL EDITOR */}
+      {activeTab === 'mcq-upload' && (
+        <div className="table-editor-wrapper">
+          <div className="upload-box-card" style={{ marginBottom: '2rem' }}>
+            <label className="dropzone-area">
+              <input
+                type="file"
+                accept=".csv, .xlsx, .xls"
+                multiple
+                onChange={handleMCQFileUpload}
+                className="hidden-file-input"
+              />
+              <div className="dropzone-content">
+                <FileText size={48} className="dropzone-icon" />
+                <h3>Upload MCQ CSV/Excel</h3>
+                <p>Columns: Question | Option A | Option B | Option C | Option D | Correct Option (A/B/C/D or 1/2/3/4) | Explanation (optional)</p>
+                <span className="btn btn-primary upload-browse-btn">Browse Files</span>
+              </div>
+            </label>
+          </div>
+
+          <div className="mcq-section-divider">
+            <span>— OR CREATE MANUALLY —</span>
+          </div>
+
+          <div className="topic-name-row">
+            <label>Topic Name:</label>
+            <input
+              type="text"
+              className="topic-name-input"
+              value={mcqTopicName}
+              onChange={(e) => setMcqTopicName(e.target.value)}
+              placeholder="e.g. Science Quiz"
+            />
+          </div>
+
+          <div className="table-toolbar">
+            <button className="btn btn-secondary btn-sm" onClick={handleAddMcqRow}>
+              <Plus size={16} />
+              <span>Add Question</span>
+            </button>
+            <button className="btn btn-primary save-data-btn" onClick={handleSaveMcqTopic}>
+              <Save size={18} />
+              <span>Save MCQ Topic</span>
+            </button>
+          </div>
+
+          <div className="mcq-questions-list">
+            {mcqRows.map((row, rIdx) => (
+              <div key={rIdx} className="mcq-question-card">
+                <div className="mcq-question-header">
+                  <h4>Question #{rIdx + 1}</h4>
+                  <button
+                    className="delete-row-btn"
+                    onClick={() => handleDeleteMcqRow(rIdx)}
+                    title="Delete Question"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+                
+                <input
+                  type="text"
+                  className="cell-input"
+                  style={{ width: '100%', marginBottom: '1rem', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)' }}
+                  placeholder="Enter your question here..."
+                  value={row.question}
+                  onChange={(e) => handleMcqFieldChange(rIdx, 'question', e.target.value)}
+                />
+
+                <div className="mcq-options-grid">
+                  {['A', 'B', 'C', 'D'].map((letter, optIdx) => {
+                    const isCorrectOpt = (row.correctIndex || 0) === optIdx;
+                    return (
+                      <div key={optIdx} className={`mcq-option-input ${isCorrectOpt ? 'correct-option' : ''}`}>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', marginBottom: '0.2rem' }}>
+                          <input
+                            type="radio"
+                            name={`correct-opt-${rIdx}`}
+                            checked={isCorrectOpt}
+                            onChange={() => handleMcqFieldChange(rIdx, 'correctIndex', optIdx)}
+                          />
+                          <span className="option-label" style={{ fontWeight: 600 }}>Option {letter} {isCorrectOpt ? '(Correct)' : ''}</span>
+                        </label>
+                        <input 
+                          type="text" 
+                          placeholder={`Enter Option ${letter}`} 
+                          value={row.options[optIdx] || ''} 
+                          onChange={(e) => handleMcqOptionChange(rIdx, optIdx, e.target.value)} 
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <textarea
+                  className="mcq-explanation-textarea"
+                  placeholder="Explanation (optional, supports markdown)"
+                  value={row.explanation}
+                  onChange={(e) => handleMcqFieldChange(rIdx, 'explanation', e.target.value)}
+                />
+              </div>
+            ))}
           </div>
         </div>
       )}
@@ -640,12 +898,126 @@ export const UploadPage = () => {
           padding: 0.2rem 0.4rem;
         }
 
-        .delete-row-btn:hover {
+          .delete-row-btn:hover {
           color: var(--danger);
         }
 
         .action-cell {
           text-align: center;
+        }
+
+        /* MCQ Styles */
+        .type-badge {
+          font-size: 0.65rem;
+          padding: 0.15rem 0.45rem;
+          border-radius: 9999px;
+          font-weight: 700;
+        }
+        
+        .mcq-type {
+          background-color: #dbeafe;
+          color: #2563eb;
+        }
+
+        .mcq-section-divider {
+          text-align: center;
+          margin: 2rem 0;
+          color: var(--text-muted);
+          font-weight: 600;
+          font-size: 0.9rem;
+          display: flex;
+          align-items: center;
+        }
+
+        .mcq-section-divider::before,
+        .mcq-section-divider::after {
+          content: "";
+          flex: 1;
+          border-bottom: 1px solid var(--border-color);
+        }
+
+        .mcq-section-divider span {
+          padding: 0 1rem;
+        }
+
+        .mcq-question-card {
+          background-color: #ffffff;
+          border: 1px solid var(--border-color);
+          border-radius: var(--radius-md);
+          padding: 1.25rem;
+          margin-bottom: 1rem;
+        }
+
+        .mcq-question-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 0.75rem;
+        }
+        
+        .mcq-question-header h4 {
+          font-size: 0.95rem;
+          color: var(--text-main);
+          font-weight: 700;
+        }
+
+        .mcq-options-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 0.75rem;
+          margin-bottom: 1rem;
+        }
+
+        .mcq-option-input {
+          display: flex;
+          align-items: center;
+          border: 1px solid var(--border-color);
+          border-radius: var(--radius-sm);
+          overflow: hidden;
+        }
+
+        .mcq-option-input.correct-option {
+          border-left: 4px solid #16a34a;
+        }
+
+        .mcq-option-input .option-label {
+          background-color: #f8fafc;
+          padding: 0.5rem 0.75rem;
+          font-size: 0.85rem;
+          font-weight: 600;
+          color: var(--text-muted);
+          border-right: 1px solid var(--border-color);
+          min-width: 40px;
+          text-align: center;
+        }
+
+        .mcq-option-input input {
+          flex: 1;
+          border: none;
+          padding: 0.5rem 0.75rem;
+          font-size: 0.9rem;
+          background: transparent;
+        }
+
+        .mcq-option-input input:focus {
+          outline: none;
+          background-color: #f0f9ff;
+        }
+
+        .mcq-explanation-textarea {
+          width: 100%;
+          min-height: 80px;
+          border: 1px solid var(--border-color);
+          border-radius: var(--radius-sm);
+          padding: 0.75rem;
+          font-size: 0.9rem;
+          resize: vertical;
+          font-family: inherit;
+        }
+
+        .mcq-explanation-textarea:focus {
+          outline: none;
+          border-color: var(--primary);
         }
 
         /* Mobile Responsive */
@@ -674,6 +1046,10 @@ export const UploadPage = () => {
         }
 
         @media (max-width: 480px) {
+          .mcq-options-grid {
+            grid-template-columns: 1fr;
+          }
+
           .upload-page-container {
             padding-top: 1rem;
             padding-bottom: 1.5rem;

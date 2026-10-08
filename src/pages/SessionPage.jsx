@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { soundFx } from '../utils/audio';
-import { Clock, X, Check, Flame, Zap, Award, Repeat, Eye, ArrowRight, HelpCircle } from 'lucide-react';
+import { Clock, X, Check, Flame, Zap, Award, Repeat, Eye, ArrowRight, HelpCircle, BookOpen, Trash2 } from 'lucide-react';
+import { ExplanationPanel } from '../components/ExplanationPanel';
 
 export const SessionPage = () => {
-  const { activeTopic, settings, setActiveSessionResults, updateTopicMastery, navigateTo } = useAuth();
+  const { activeTopic, settings, setActiveSessionResults, updateTopicMastery, updateTopic, showToast, navigateTo } = useAuth();
 
   const dataset = activeTopic && activeTopic.data ? activeTopic.data : [];
+  const isMCQ = activeTopic?.type === 'mcq';
 
   // Shuffled Queue State
   const [shuffledDeck, setShuffledDeck] = useState([]);
@@ -38,6 +40,18 @@ export const SessionPage = () => {
   const [totalXp, setTotalXp] = useState(0);
   const [floatingXp, setFloatingXp] = useState(null);
 
+  // MCQ State
+  const [selectedOptionIdx, setSelectedOptionIdx] = useState(null);
+  const [mcqSubmitted, setMcqSubmitted] = useState(false);
+  const [shuffledOptions, setShuffledOptions] = useState([]);
+  const [correctShuffledIdx, setCorrectShuffledIdx] = useState(0);
+
+  // Explanation Panel State
+  const [isExplanationOpen, setIsExplanationOpen] = useState(false);
+
+  // Timer pause flag (for explanation editing)
+  const [isTimerPaused, setIsTimerPaused] = useState(false);
+
   const inputRef = useRef(null);
 
   // Shuffle helper
@@ -60,7 +74,7 @@ export const SessionPage = () => {
 
   // Focus input automatically & reset question-specific flags
   useEffect(() => {
-    if (inputRef.current) {
+    if (!isMCQ && inputRef.current) {
       inputRef.current.focus();
     }
     setConsecutiveWrong(0);
@@ -69,7 +83,51 @@ export const SessionPage = () => {
     if (settings?.rapidFireMode) {
       setRapidFireTimeLeft(settings?.rapidFireSeconds || 3);
     }
-  }, [currentIndex]);
+  }, [currentIndex, isMCQ, settings]);
+
+  // Shuffle options when question changes (MCQ)
+  useEffect(() => {
+    if (isMCQ && shuffledDeck.length > 0) {
+      const currentItem = shuffledDeck[currentIndex];
+      if (currentItem && currentItem.options) {
+        const targetCorrectIndex = currentItem.correctIndex !== undefined ? currentItem.correctIndex : 0;
+        const optionsWithOriginalIndex = currentItem.options.map((text, idx) => ({ text, originalIndex: idx }));
+        const shuffled = shuffleArray(optionsWithOriginalIndex);
+        setShuffledOptions(shuffled);
+        
+        const correctIdx = shuffled.findIndex(opt => opt.originalIndex === targetCorrectIndex);
+        setCorrectShuffledIdx(correctIdx);
+      }
+    }
+  }, [currentIndex, isMCQ, shuffledDeck]);
+
+  const handleDeleteCurrentQuestion = () => {
+    if (!shuffledDeck.length) return;
+    const currentItem = shuffledDeck[currentIndex];
+    
+    // Remove from active topic data
+    if (activeTopic && activeTopic.data) {
+      const updatedData = activeTopic.data.filter(item => item.question !== currentItem.question);
+      updateTopic(activeTopic.id, { ...activeTopic, data: updatedData });
+    }
+
+    // Remove from active deck
+    const newDeck = shuffledDeck.filter((_, idx) => idx !== currentIndex);
+
+    if (newDeck.length === 0) {
+      handleFinishSession();
+      if (showToast) showToast('Question deleted. Session finished.');
+    } else {
+      setShuffledDeck(newDeck);
+      const nextIdx = currentIndex >= newDeck.length ? 0 : currentIndex;
+      setCurrentIndex(nextIdx);
+      setSelectedOptionIdx(null);
+      setMcqSubmitted(false);
+      setIsExplanationOpen(false);
+      setIsTimerPaused(false);
+      if (showToast) showToast('Question deleted');
+    }
+  };
 
   // Total Session Countdown Timer
   useEffect(() => {
@@ -78,16 +136,19 @@ export const SessionPage = () => {
       return;
     }
 
+    if (isTimerPaused) return;
+
     const timer = setInterval(() => {
       setSessionTimeLeft(prev => prev - 1);
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [sessionTimeLeft]);
+  }, [sessionTimeLeft, isTimerPaused]);
 
   // Rapid Fire Countdown Timer per question
   useEffect(() => {
     if (!settings?.rapidFireMode) return;
+    if (isTimerPaused) return;
 
     if (rapidFireTimeLeft <= 0) {
       handleRapidFireTimeout();
@@ -99,14 +160,18 @@ export const SessionPage = () => {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [rapidFireTimeLeft, settings?.rapidFireMode]);
+  }, [rapidFireTimeLeft, settings?.rapidFireMode, isTimerPaused]);
 
   const handleRapidFireTimeout = () => {
     soundFx.playWrongSound();
 
     setIncorrectCount(prev => prev + 1);
     setStreakCount(0);
-    advanceToNextQuestion();
+    if (isMCQ) {
+      advanceMcqQuestion();
+    } else {
+      advanceToNextQuestion();
+    }
   };
 
   const handleFinishSession = () => {
@@ -135,6 +200,8 @@ export const SessionPage = () => {
   const promptText = settings?.flipMode ? rawItem.value : rawItem.key;
   const targetAnswer = String(settings?.flipMode ? rawItem.key : rawItem.value).trim();
   const expectedLength = targetAnswer.length;
+  
+  const currentMcqItem = isMCQ ? (shuffledDeck[currentIndex] || {}) : {};
 
   const advanceToNextQuestion = () => {
     setInputValue('');
@@ -144,6 +211,20 @@ export const SessionPage = () => {
     setConsecutiveWrong(0);
     setIsAnswerRevealed(false);
 
+    if (currentIndex + 1 < shuffledDeck.length) {
+      setCurrentIndex(prev => prev + 1);
+    } else {
+      setShuffledDeck(shuffleArray(dataset));
+      setCurrentIndex(0);
+    }
+  };
+
+  const advanceMcqQuestion = () => {
+    setSelectedOptionIdx(null);
+    setMcqSubmitted(false);
+    setIsExplanationOpen(false);
+    setIsTimerPaused(false);
+    
     if (currentIndex + 1 < shuffledDeck.length) {
       setCurrentIndex(prev => prev + 1);
     } else {
@@ -224,6 +305,64 @@ export const SessionPage = () => {
     }
   };
 
+  const handleMcqOptionClick = (shuffledIdx) => {
+    if (mcqSubmitted) return; // prevent double-click
+    setSelectedOptionIdx(shuffledIdx);
+    setMcqSubmitted(true);
+    
+    if (shuffledIdx === correctShuffledIdx) {
+      // CORRECT
+      setCorrectCount(prev => prev + 1);
+      const newStreak = streakCount + 1;
+      setStreakCount(newStreak);
+      const multiplier = newStreak >= 10 ? 4 : newStreak >= 5 ? 3 : newStreak >= 3 ? 2 : 1;
+      const earnedXp = 100 * multiplier;
+      setTotalXp(prev => prev + earnedXp);
+      
+      if (newStreak >= 3) { soundFx.playStreakSound(); } 
+      else { soundFx.playCorrectSound(); }
+      
+      const xpText = multiplier > 1 ? `+${earnedXp} XP (${multiplier}x Streak!)` : `+${earnedXp} XP`;
+      setFloatingXp({ id: Date.now(), text: xpText });
+      setTimeout(() => setFloatingXp(null), 900);
+      
+      // Auto advance after 800ms
+      setTimeout(() => {
+        advanceMcqQuestion();
+      }, 800);
+    } else {
+      // INCORRECT
+      setIncorrectCount(prev => prev + 1);
+      setStreakCount(0);
+      soundFx.playWrongSound();
+      // Don't auto-advance — show correct answer, let user click Next or Reveal Explanation
+    }
+  };
+
+  const handleOpenExplanation = () => {
+    setIsExplanationOpen(true);
+    setIsTimerPaused(true);
+  };
+
+  const handleCloseExplanation = () => {
+    setIsExplanationOpen(false);
+    setIsTimerPaused(false);
+  };
+
+  const handleSaveExplanation = (newText) => {
+    // Update the explanation in the topic data
+    if (activeTopic && activeTopic.data) {
+      const originalItem = shuffledDeck[currentIndex];
+      const updatedData = activeTopic.data.map(item => {
+        if (item.question === originalItem.question) {
+          return { ...item, explanation: newText };
+        }
+        return item;
+      });
+      updateTopic(activeTopic.id, { ...activeTopic, data: updatedData });
+    }
+  };
+
   const formatTime = (secs) => {
     const valid = isNaN(secs) || secs <= 0 ? 0 : secs;
     const m = Math.floor(valid / 60);
@@ -233,7 +372,7 @@ export const SessionPage = () => {
 
   return (
     <div className="session-container flex-center">
-      <div className="session-card animate-fade-in">
+      <div className={`session-card ${isMCQ ? 'session-card-mcq' : ''} animate-fade-in`}>
         
         {/* Floating XP Popup */}
         {floatingXp && (
@@ -251,7 +390,7 @@ export const SessionPage = () => {
               <span>{formatTime(sessionTimeLeft)}</span>
             </div>
 
-            {settings?.flipMode && (
+            {settings?.flipMode && !isMCQ && (
               <span className="mini-badge flip-mini">
                 <Repeat size={12} /> Flipped
               </span>
@@ -288,63 +427,122 @@ export const SessionPage = () => {
           </div>
         )}
 
-        {/* Question Prompt */}
-        <div className="question-box">
-          <span className="question-label">
-            {settings?.flipMode ? 'VALUE → TYPE KEY' : 'KEY → TYPE VALUE'}
-          </span>
-          <h2 className="question-key">{promptText || '...'}</h2>
-        </div>
-
-        {/* Answer Form */}
-        <form onSubmit={handleSubmitForm} className="answer-form">
-          <div className="input-wrapper">
-            <input
-              ref={inputRef}
-              type="text"
-              className={`session-input ${isShaking ? 'animate-shake' : ''} ${isError ? 'input-error' : ''}`}
-              placeholder="Type answer..."
-              value={inputValue}
-              onChange={handleInputChange}
-              autoComplete="off"
-              autoCapitalize="off"
-              spellCheck="false"
-            />
-          </div>
-
-          {/* Reveal Answer Banner or Manual Reveal Button */}
-          {isAnswerRevealed ? (
-            <div className="revealed-answer-banner animate-fade-in">
-              <div className="reveal-text-group">
-                <Eye size={16} className="reveal-banner-icon" />
-                <span>Correct Answer: <strong>{targetAnswer}</strong></span>
+        {isMCQ ? (
+          <>
+            {/* Question Prompt */}
+            <div className="question-box">
+              <div className="mcq-question-header-row">
+                <span className="question-label">QUESTION</span>
+                <button
+                  type="button"
+                  className="mcq-delete-q-btn"
+                  onClick={handleDeleteCurrentQuestion}
+                  title="Delete this question from topic"
+                >
+                  <Trash2 size={14} />
+                  <span>Delete Question</span>
+                </button>
               </div>
-              <button
-                type="button"
-                className="btn btn-primary btn-xs skip-next-btn"
-                onClick={advanceToNextQuestion}
-              >
-                <span>Next</span>
-                <ArrowRight size={14} />
-              </button>
+              <h2 className="question-key mcq-question-text">{currentMcqItem.question || '...'}</h2>
             </div>
-          ) : (
-            <div className="session-subtool-row">
-              {isError && (
-                <p className="error-hint">Incorrect answer.</p>
+            
+            <div className="mcq-options-grid">
+              {shuffledOptions.map((option, idx) => {
+                const isSelected = selectedOptionIdx === idx;
+                const isCorrect = mcqSubmitted && idx === correctShuffledIdx;
+                const isWrong = mcqSubmitted && isSelected && idx !== correctShuffledIdx;
+                const letter = String.fromCharCode(65 + idx); // A, B, C, D
+                
+                return (
+                  <button 
+                    key={idx}
+                    className={`mcq-option-btn ${isSelected ? 'mcq-selected' : ''} ${isCorrect ? 'mcq-correct' : ''} ${isWrong ? 'mcq-wrong' : ''}`}
+                    onClick={() => handleMcqOptionClick(idx)}
+                    disabled={mcqSubmitted && idx !== selectedOptionIdx && idx !== correctShuffledIdx}
+                  >
+                    <span className="option-letter">{letter}</span>
+                    <span>{option.text}</span>
+                  </button>
+                );
+              })}
+            </div>
+            
+            {mcqSubmitted && (
+              <div className="mcq-action-row animate-fade-in" style={{ marginTop: '0.75rem' }}>
+                {selectedOptionIdx !== correctShuffledIdx && (
+                  <button className="next-question-btn" onClick={advanceMcqQuestion}>
+                    <span>Next Question</span>
+                    <ArrowRight size={16} />
+                  </button>
+                )}
+                
+                <button className="explanation-btn" onClick={handleOpenExplanation}>
+                  <BookOpen size={14} /> Explanation
+                </button>
+              </div>
+            )}
+          </>
+        ) : (
+          <>
+            {/* Question Prompt */}
+            <div className="question-box">
+              <span className="question-label">
+                {settings?.flipMode ? 'VALUE → TYPE KEY' : 'KEY → TYPE VALUE'}
+              </span>
+              <h2 className="question-key">{promptText || '...'}</h2>
+            </div>
+
+            {/* Answer Form */}
+            <form onSubmit={handleSubmitForm} className="answer-form">
+              <div className="input-wrapper">
+                <input
+                  ref={inputRef}
+                  type="text"
+                  className={`session-input ${isShaking ? 'animate-shake' : ''} ${isError ? 'input-error' : ''}`}
+                  placeholder="Type answer..."
+                  value={inputValue}
+                  onChange={handleInputChange}
+                  autoComplete="off"
+                  autoCapitalize="off"
+                  spellCheck="false"
+                />
+              </div>
+
+              {/* Reveal Answer Banner or Manual Reveal Button */}
+              {isAnswerRevealed ? (
+                <div className="revealed-answer-banner animate-fade-in">
+                  <div className="reveal-text-group">
+                    <Eye size={16} className="reveal-banner-icon" />
+                    <span>Correct Answer: <strong>{targetAnswer}</strong></span>
+                  </div>
+                  <button
+                    type="button"
+                    className="btn btn-primary btn-xs skip-next-btn"
+                    onClick={advanceToNextQuestion}
+                  >
+                    <span>Next</span>
+                    <ArrowRight size={14} />
+                  </button>
+                </div>
+              ) : (
+                <div className="session-subtool-row">
+                  {isError && (
+                    <p className="error-hint">Incorrect answer.</p>
+                  )}
+                  <button
+                    type="button"
+                    className="reveal-hint-btn"
+                    onClick={handleManualReveal}
+                    title="Reveal correct answer"
+                  >
+                    <HelpCircle size={14} />
+                    <span>Reveal Answer</span>
+                  </button>
+                </div>
               )}
-              <button
-                type="button"
-                className="reveal-hint-btn"
-                onClick={handleManualReveal}
-                title="Reveal correct answer"
-              >
-                <HelpCircle size={14} />
-                <span>Reveal Answer</span>
-              </button>
-            </div>
-          )}
-        </form>
+            </form>
+          </>
+        )}
 
         {/* Stats footer */}
         <div className="session-stats-footer">
@@ -358,6 +556,14 @@ export const SessionPage = () => {
           </div>
         </div>
       </div>
+
+      <ExplanationPanel
+        isOpen={isExplanationOpen}
+        onClose={handleCloseExplanation}
+        explanation={currentMcqItem?.explanation || ''}
+        onSaveExplanation={handleSaveExplanation}
+        questionText={currentMcqItem?.question || ''}
+      />
 
       <style>{`
         .session-container {
@@ -380,11 +586,12 @@ export const SessionPage = () => {
           flex-direction: column;
           align-items: center;
           position: relative;
+          transition: max-width 0.25s ease;
         }
 
-        .adhd-session-card {
-          border-color: #fdba74;
-          box-shadow: 0 10px 30px -5px rgba(234, 88, 12, 0.15);
+        .session-card-mcq {
+          max-width: 680px;
+          padding: 2.25rem 2.5rem;
         }
 
         .floating-xp-popup {
@@ -638,6 +845,136 @@ export const SessionPage = () => {
           color: var(--danger);
         }
 
+        .mcq-question-text {
+          font-size: 1.5rem;
+          font-weight: 700;
+          line-height: 1.4;
+          letter-spacing: -0.01em;
+          margin-top: 0.5rem;
+        }
+
+        /* MCQ Options - Single Column Vertical Stacking */
+        .mcq-options-grid {
+          display: flex;
+          flex-direction: column;
+          gap: 0.75rem;
+          width: 100%;
+          margin-bottom: 1.25rem;
+        }
+
+        .mcq-option-btn {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          padding: 0.85rem 1rem;
+          border-radius: var(--radius-md);
+          border: 2px solid var(--border-color);
+          background-color: #ffffff;
+          text-align: left;
+          font-size: 0.95rem;
+          font-weight: 500;
+          color: var(--text-main);
+          transition: all 0.15s ease;
+          cursor: pointer;
+          min-height: 52px;
+        }
+
+        .mcq-option-btn:hover:not(:disabled) {
+          border-color: var(--primary);
+          background-color: var(--primary-light);
+        }
+
+        .mcq-option-btn:disabled {
+          opacity: 0.5;
+          cursor: default;
+        }
+
+        .mcq-option-btn.mcq-correct {
+          border-color: #16a34a;
+          background-color: #f0fdf4;
+          color: #16a34a;
+          font-weight: 700;
+        }
+
+        .mcq-option-btn.mcq-wrong {
+          border-color: #dc2626;
+          background-color: #fef2f2;
+          color: #dc2626;
+          font-weight: 700;
+          animation: shake 0.35s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+        }
+
+        .mcq-option-btn.mcq-selected {
+          border-color: var(--primary);
+          background-color: var(--primary-light);
+        }
+
+        .option-letter {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 28px;
+          height: 28px;
+          border-radius: 50%;
+          background-color: #f1f5f9;
+          font-size: 0.8rem;
+          font-weight: 700;
+          color: var(--text-muted);
+          flex-shrink: 0;
+        }
+
+        .mcq-correct .option-letter {
+          background-color: #16a34a;
+          color: #ffffff;
+        }
+
+        .mcq-wrong .option-letter {
+          background-color: #dc2626;
+          color: #ffffff;
+        }
+
+        .mcq-action-row {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.75rem;
+          width: 100%;
+          flex-wrap: wrap;
+        }
+
+        .explanation-btn {
+          display: flex;
+          align-items: center;
+          gap: 0.35rem;
+          padding: 0.45rem 0.85rem;
+          font-size: 0.85rem;
+          font-weight: 600;
+          color: #7c3aed;
+          border: 1px solid #ddd6fe;
+          border-radius: var(--radius-sm);
+          background-color: #f3e8ff;
+        }
+
+        .explanation-btn:hover {
+          background-color: #ede9fe;
+        }
+
+        .next-question-btn {
+          display: flex;
+          align-items: center;
+          gap: 0.35rem;
+          padding: 0.45rem 0.85rem;
+          font-size: 0.85rem;
+          font-weight: 600;
+          color: #ffffff;
+          border-radius: var(--radius-sm);
+          background-color: var(--primary);
+        }
+
+        .next-question-btn:hover {
+          background-color: var(--primary-hover);
+        }
+
         /* Mobile Responsive */
         @media (max-width: 768px) {
           .session-container {
@@ -737,6 +1074,59 @@ export const SessionPage = () => {
           .floating-xp-popup {
             font-size: 0.8rem;
             padding: 0.3rem 0.8rem;
+          }
+          
+          /* MCQ Header Row & Delete Question Button */
+          .mcq-question-header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            margin-bottom: 0.35rem;
+          }
+
+          .mcq-delete-q-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.25rem 0.6rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #ef4444;
+            background-color: #fef2f2;
+            border: 1px solid #fca5a5;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all 0.15s ease;
+          }
+
+          .mcq-delete-q-btn:hover {
+            background-color: #fee2e2;
+            border-color: #f87171;
+            color: #dc2626;
+          }
+
+          /* MCQ Mobile */
+          .session-card-mcq {
+            max-width: 100%;
+            padding: 1.25rem 1rem;
+          }
+
+          .mcq-question-text {
+            font-size: 1.25rem;
+          }
+
+          .mcq-options-grid {
+            gap: 0.5rem;
+          }
+          
+          .mcq-option-btn {
+            padding: 0.75rem 0.85rem;
+            font-size: 0.9rem;
+          }
+          
+          .mcq-action-row {
+            gap: 0.5rem;
           }
         }
       `}</style>
