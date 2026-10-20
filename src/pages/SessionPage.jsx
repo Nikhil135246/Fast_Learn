@@ -592,6 +592,7 @@ export const SessionPage = () => {
         .session-card-mcq {
           max-width: 680px;
           padding: 2.25rem 2.5rem;
+          overflow: hidden;
         }
 
         .floating-xp-popup {
@@ -877,6 +878,8 @@ export const SessionPage = () => {
           transition: all 0.15s ease;
           cursor: pointer;
           min-height: 52px;
+          overflow-wrap: break-word;
+          word-break: break-word;
         }
 
         .mcq-option-btn:hover:not(:disabled) {
@@ -973,6 +976,38 @@ export const SessionPage = () => {
 
         .next-question-btn:hover {
           background-color: var(--primary-hover);
+        }
+
+        /* MCQ Question Header Row */
+        .mcq-question-header-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          width: 100%;
+          margin-bottom: 0.5rem;
+        }
+
+        .mcq-delete-q-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.35rem;
+          padding: 0.3rem 0.7rem;
+          font-size: 0.75rem;
+          font-weight: 600;
+          color: #ef4444;
+          background-color: #fef2f2;
+          border: 1px solid #fca5a5;
+          border-radius: var(--radius-sm);
+          cursor: pointer;
+          transition: all 0.15s ease;
+          white-space: nowrap;
+          flex-shrink: 0;
+        }
+
+        .mcq-delete-q-btn:hover {
+          background-color: #fee2e2;
+          border-color: #f87171;
+          color: #dc2626;
         }
 
         /* Mobile Responsive */
@@ -1074,36 +1109,6 @@ export const SessionPage = () => {
           .floating-xp-popup {
             font-size: 0.8rem;
             padding: 0.3rem 0.8rem;
-          }
-          
-          /* MCQ Header Row & Delete Question Button */
-          .mcq-question-header-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            width: 100%;
-            margin-bottom: 0.35rem;
-          }
-
-          .mcq-delete-q-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.35rem;
-            padding: 0.25rem 0.6rem;
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: #ef4444;
-            background-color: #fef2f2;
-            border: 1px solid #fca5a5;
-            border-radius: var(--radius-sm);
-            cursor: pointer;
-            transition: all 0.15s ease;
-          }
-
-          .mcq-delete-q-btn:hover {
-            background-color: #fee2e2;
-            border-color: #f87171;
-            color: #dc2626;
           }
 
           /* MCQ Mobile */
