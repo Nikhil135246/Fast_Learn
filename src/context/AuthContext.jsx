@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import {
   getUserTopics,
   saveUserTopics as apiSaveTopics,
@@ -16,11 +16,17 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [topics, setTopics] = useState(DEFAULT_TOPICS);
+  const topicsRef = useRef(topics);
   const [activeTopicId, setActiveTopicId] = useState('ports_numbers');
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const [toastMessage, setToastMessage] = useState(null);
   const [activeSessionResults, setActiveSessionResults] = useState(null);
   const [currentPage, setCurrentPage] = useState('auth');
+
+  // Keep topicsRef in sync with topics state
+  useEffect(() => {
+    topicsRef.current = topics;
+  }, [topics]);
 
   const loadUserData = async (username) => {
     const userTopics = await getUserTopics(username);
@@ -90,7 +96,7 @@ export const AuthProvider = ({ children }) => {
   // Add New Topic (from CSV upload or manual creation)
   const addTopic = (newTopic) => {
     const topicToAdd = { mastery: 0, ...newTopic };
-    const updated = [...topics, topicToAdd];
+    const updated = [...topicsRef.current, topicToAdd];
     setTopics(updated);
     setActiveTopicId(topicToAdd.id);
     if (user) {
@@ -102,7 +108,7 @@ export const AuthProvider = ({ children }) => {
 
   // Update existing Topic
   const updateTopic = (id, updatedTopic) => {
-    const updated = topics.map(t => (t.id === id ? updatedTopic : t));
+    const updated = topicsRef.current.map(t => (t.id === id ? updatedTopic : t));
     setTopics(updated);
     if (user) {
       apiSaveTopics(user.username, updated);
@@ -112,7 +118,7 @@ export const AuthProvider = ({ children }) => {
 
   // Update Topic Mastery Accuracy Percentage
   const updateTopicMastery = (topicId, accuracy) => {
-    const updated = topics.map(t => {
+    const updated = topicsRef.current.map(t => {
       if (t.id === topicId) {
         // Keep highest mastery percentage achieved
         const newMastery = Math.max(t.mastery || 0, accuracy);
@@ -128,7 +134,7 @@ export const AuthProvider = ({ children }) => {
 
   // Delete Topic
   const deleteTopic = (id) => {
-    const filtered = topics.filter(t => t.id !== id);
+    const filtered = topicsRef.current.filter(t => t.id !== id);
     setTopics(filtered);
     if (activeTopicId === id && filtered.length > 0) {
       setActiveTopicId(filtered[0].id);

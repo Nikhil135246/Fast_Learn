@@ -110,12 +110,8 @@ export const DEFAULT_SETTINGS = {
 
 export const getUserTopics = async (username) => {
   if (!username) return DEFAULT_TOPICS;
-  try {
-    const data = await puter.kv.get('topics');
-    return data ? data : DEFAULT_TOPICS;
-  } catch (e) {
-    return DEFAULT_TOPICS;
-  }
+  const data = await puter.kv.get('topics');
+  return data ? data : DEFAULT_TOPICS;
 };
 
 export const saveUserTopics = async (username, topics) => {
@@ -148,12 +144,8 @@ export const saveActiveTopicId = async (username, topicId) => {
 
 export const getUserSettings = async (username) => {
   if (!username) return DEFAULT_SETTINGS;
-  try {
-    const data = await puter.kv.get('settings');
-    return data ? { ...DEFAULT_SETTINGS, ...data } : DEFAULT_SETTINGS;
-  } catch (e) {
-    return DEFAULT_SETTINGS;
-  }
+  const data = await puter.kv.get('settings');
+  return data ? { ...DEFAULT_SETTINGS, ...data } : DEFAULT_SETTINGS;
 };
 
 export const saveUserSettings = async (username, settings) => {

@@ -53,6 +53,14 @@ export const SessionPage = () => {
   const [isTimerPaused, setIsTimerPaused] = useState(false);
 
   const inputRef = useRef(null);
+  const autoAdvanceTimerRef = useRef(null);
+
+  // Cleanup auto-advance timer on unmount
+  useEffect(() => {
+    return () => {
+      if (autoAdvanceTimerRef.current) clearTimeout(autoAdvanceTimerRef.current);
+    };
+  }, []);
 
   // Shuffle helper
   const shuffleArray = (arr) => {
@@ -70,7 +78,7 @@ export const SessionPage = () => {
       setShuffledDeck(shuffleArray(dataset));
       setCurrentIndex(0);
     }
-  }, [activeTopic]);
+  }, [activeTopic?.id]);
 
   // Focus input automatically & reset question-specific flags
   useEffect(() => {
@@ -102,6 +110,7 @@ export const SessionPage = () => {
   }, [currentIndex, isMCQ, shuffledDeck]);
 
   const handleDeleteCurrentQuestion = () => {
+    if (autoAdvanceTimerRef.current) { clearTimeout(autoAdvanceTimerRef.current); autoAdvanceTimerRef.current = null; }
     if (!shuffledDeck.length) return;
     const currentItem = shuffledDeck[currentIndex];
     
@@ -149,6 +158,7 @@ export const SessionPage = () => {
   useEffect(() => {
     if (!settings?.rapidFireMode) return;
     if (isTimerPaused) return;
+    if (isMCQ && mcqSubmitted) return;
 
     if (rapidFireTimeLeft <= 0) {
       handleRapidFireTimeout();
@@ -160,7 +170,7 @@ export const SessionPage = () => {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [rapidFireTimeLeft, settings?.rapidFireMode, isTimerPaused]);
+  }, [rapidFireTimeLeft, settings?.rapidFireMode, isTimerPaused, isMCQ, mcqSubmitted]);
 
   const handleRapidFireTimeout = () => {
     soundFx.playWrongSound();
@@ -220,6 +230,7 @@ export const SessionPage = () => {
   };
 
   const advanceMcqQuestion = () => {
+    if (autoAdvanceTimerRef.current) { clearTimeout(autoAdvanceTimerRef.current); autoAdvanceTimerRef.current = null; }
     setSelectedOptionIdx(null);
     setMcqSubmitted(false);
     setIsExplanationOpen(false);
@@ -327,7 +338,8 @@ export const SessionPage = () => {
       setTimeout(() => setFloatingXp(null), 900);
       
       // Auto advance after 800ms
-      setTimeout(() => {
+      autoAdvanceTimerRef.current = setTimeout(() => {
+        autoAdvanceTimerRef.current = null;
         advanceMcqQuestion();
       }, 800);
     } else {
@@ -340,6 +352,7 @@ export const SessionPage = () => {
   };
 
   const handleOpenExplanation = () => {
+    if (autoAdvanceTimerRef.current) { clearTimeout(autoAdvanceTimerRef.current); autoAdvanceTimerRef.current = null; }
     setIsExplanationOpen(true);
     setIsTimerPaused(true);
   };
@@ -360,6 +373,14 @@ export const SessionPage = () => {
         return item;
       });
       updateTopic(activeTopic.id, { ...activeTopic, data: updatedData });
+
+      // Also update the shuffledDeck so the current view shows the latest value
+      setShuffledDeck(prev => prev.map((item, idx) => {
+        if (idx === currentIndex) {
+          return { ...item, explanation: newText };
+        }
+        return item;
+      }));
     }
   };
 
